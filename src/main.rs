@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut schedule = schedule::Schedule::from_raw(raw)?;
 
-    let next = schedule.get_next();
+    let mut next = schedule.get_next();
 
     tokio::time::sleep_until(next.get_start().into()).await;
 
@@ -26,9 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         changer.process(next).await;
 
-        //changer.change_volume(VolumeChange::Up(next.desired_sound))?;
-
-        let next = schedule.get_next();
+        next = schedule.get_next();
 
         tokio::time::sleep_until(next.get_start().into()).await;
     }

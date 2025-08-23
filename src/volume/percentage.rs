@@ -1,6 +1,6 @@
 use std::fmt::{self, Display};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Percentage(u8);
 
 #[derive(thiserror::Error, Debug)]

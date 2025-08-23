@@ -1,6 +1,9 @@
 use std::process::{Command, Stdio};
 
-use crate::{schedule::Invocation, volume::percentage::Percentage};
+use crate::{
+    schedule::Invocation,
+    volume::{PercentageError, percentage::Percentage, ramp},
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum VolumeError {
@@ -8,6 +11,8 @@ pub enum VolumeError {
     Spawn(#[from] std::io::Error),
     #[error("pactl returned non-zero exit status: {status}. stderr: {stderr}")]
     Pactl { status: i32, stderr: String },
+    #[error("parsing percentage failed")]
+    Percentage(#[from] PercentageError),
 }
 
 pub enum VolumeChange {
@@ -19,13 +24,11 @@ type VolumeResult = Result<(), VolumeError>;
 
 pub trait VolumeSetter {
     fn process(&self, invocation: Invocation) -> impl Future<Output = VolumeResult>;
-    fn change_volume(&self, change: VolumeChange) -> VolumeResult;
-    fn set_volume(&self, new_volume: Percentage) -> VolumeResult;
 }
 
 pub struct DefaultSetter {}
 
-impl VolumeSetter for DefaultSetter {
+impl DefaultSetter {
     fn change_volume(&self, change: VolumeChange) -> VolumeResult {
         let formatted = match change {
             VolumeChange::Up(i) => format!("+{i}%"),
@@ -44,8 +47,32 @@ impl VolumeSetter for DefaultSetter {
 
         Ok(())
     }
+}
 
+impl VolumeSetter for DefaultSetter {
     async fn process(&self, invocation: Invocation) -> VolumeResult {
+        let now = std::time::Instant::now();
+        let end = invocation.time;
+
+        let duration = end - now;
+
+        let ramp = ramp::VolumeRamp::new(0, invocation.desired_sound.value(), end, duration);
+
+        let mut last_set: Option<Percentage> = None;
+
+        loop {
+            let now = std::time::Instant::now();
+
+            let v: Percentage = ramp.value_at(now).try_into()?;
+
+            if last_set.is_none() || v != last_set.unwrap() {
+                self.set_volume(v);
+                last_set = Some(v);
+            }
+
+            tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+        }
+
         Ok(())
     }
 }
