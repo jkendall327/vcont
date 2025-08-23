@@ -7,26 +7,25 @@ fn smootherstep01(t: f32) -> f32 {
 
 // A single ramp centered on a "target time" with a chosen duration.
 pub struct VolumeRamp {
-    from: u8,       // snapshot at ramp start
-    to: u8,         // target at target_time
-    start: Instant, // target_time - duration/2
-    end: Instant,   // target_time + duration/2
+    from: u8,
+    to: u8,
+    start: Instant,
+    end: Instant,
 }
 
 impl VolumeRamp {
-    // Build a ramp: e.g., 3-minute ramp centered on 08:00
+    // Build a ramp: e.g., 3-minute ramp ending at 08:00
     pub fn new(
         current_volume_now: u8,
         target: u8,
         target_time: Instant,
         duration: Duration,
     ) -> VolumeRamp {
-        let half = duration / 2;
         VolumeRamp {
-            from: current_volume_now, // snapshot now
+            from: current_volume_now,
             to: target,
-            start: target_time - half,
-            end: target_time + half,
+            start: target_time - duration,
+            end: target_time,
         }
     }
 
