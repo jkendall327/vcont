@@ -29,7 +29,7 @@ impl VolumeSetter for DefaultSetter {
             VolumeChange::Down(i) => format!("-{i}%"),
         };
 
-        Self::set(formatted.as_str())?;
+        set(formatted.as_str())?;
 
         Ok(())
     }
@@ -37,20 +37,18 @@ impl VolumeSetter for DefaultSetter {
     fn set_volume(&self, new_volume: Percentage) -> Result<(), Box<dyn std::error::Error>> {
         let new_volume = format!("{new_volume}%");
 
-        Self::set(new_volume.as_str())?;
+        set(new_volume.as_str())?;
 
         Ok(())
     }
 }
 
-impl DefaultSetter {
-    fn set(change: &str) -> Result<(), Box<dyn std::error::Error>> {
-        Command::new("pactl")
-            .args(["set-sink-volume", "@DEFAULT_SINK@", change])
-            .status()?;
+fn set(change: &str) -> Result<(), Box<dyn std::error::Error>> {
+    Command::new("pactl")
+        .args(["set-sink-volume", "@DEFAULT_SINK@", change])
+        .status()?;
 
-        Ok(())
-    }
+    Ok(())
 }
 
 pub fn system_volume() -> impl VolumeSetter {
