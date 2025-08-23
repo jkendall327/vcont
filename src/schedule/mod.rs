@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use chrono::{DateTime, Days, Local, NaiveDateTime, NaiveTime, TimeDelta, TimeZone};
 
-use crate::volume::Percentage;
+use crate::volume::{self, Percentage};
 
 pub struct Schedule {
     targets: Vec<Target>,
@@ -20,6 +20,14 @@ pub struct Invocation {
     pub time: std::time::Instant,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum ScheduleError {
+    #[error("could not be parse time portion")]
+    UnparsedTime(#[from] chrono::format::ParseError),
+    #[error("could not parse percentage portion")]
+    UnparsedVolume(#[from] volume::PercentageError),
+}
+
 impl Schedule {
     /// Creates an empty schedule.
     pub fn new() -> Schedule {
@@ -27,27 +35,25 @@ impl Schedule {
     }
 
     /// Creates a schedule from string representations of times and desired volumes.
-    pub fn from_raw(
-        mut targets: Vec<(String, String)>,
-    ) -> Result<Schedule, Box<dyn std::error::Error>> {
-        let targets: Vec<_> = targets
+    pub fn from_raw(mut targets: Vec<(String, String)>) -> Result<Schedule, ScheduleError> {
+        let targets: Result<Vec<_>, ScheduleError> = targets
             .into_iter()
             .map(|(t, v)| {
-                let time = chrono::NaiveTime::parse_from_str(t.as_str(), "%H:%M").unwrap();
-                let desired_sound: Percentage = v.as_str().parse().unwrap();
+                let time = chrono::NaiveTime::parse_from_str(t.as_str(), "%H:%M")?;
+                let desired_sound: Percentage = v.as_str().parse()?;
 
-                Target {
+                Ok(Target {
                     desired_sound,
                     time,
-                }
+                })
             })
             .collect();
 
-        Self::from_targets(todo!())
+        Self::from_targets(targets?)
     }
 
-    pub fn from_targets(mut targets: Vec<Target>) -> Result<Schedule, Box<dyn std::error::Error>> {
-        // TODO: don't make consumers have to construct the Target
+    /// Creates a schedule from pre-constructed targets.
+    pub fn from_targets(mut targets: Vec<Target>) -> Result<Schedule, ScheduleError> {
         targets.sort_by_key(|t| t.time);
         Ok(Schedule { targets })
     }

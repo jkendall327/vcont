@@ -8,20 +8,12 @@ mod volume;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let times = vec!["08:00", "11:32"];
+    let raw = vec![
+        ("08:00".to_owned(), "54".to_owned()),
+        ("09:00".to_owned(), "23".to_owned()),
+    ];
 
-    let targets: Vec<_> = times
-        .into_iter()
-        .map(|hhmm| {
-            let t = chrono::NaiveTime::parse_from_str(hhmm, "%H:%M").unwrap();
-            schedule::Target {
-                desired_sound: crate::volume::Percentage::new(50).unwrap(),
-                time: t,
-            }
-        })
-        .collect();
-
-    let mut schedule = schedule::Schedule::from_targets(targets)?;
+    let mut schedule = schedule::Schedule::from_raw(raw)?;
 
     let next = schedule.get_next();
 
