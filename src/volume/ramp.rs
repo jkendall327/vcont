@@ -44,13 +44,3 @@ impl VolumeRamp {
         v.round().clamp(0.0, 100.0) as u8
     }
 }
-
-// Example tick loop (pseudo):
-// let mut ramp = plan_ramp(get_system_volume(), 18, target_time_8am, Duration::from_secs(180));
-// loop {
-//     let now = Instant::now();
-//     let v = ramp.value_at(now);
-//     // Only write if it actually changed (avoid spamming the system API)
-//     if v != last_set { set_system_volume(v); last_set = v; }
-//     std::thread::sleep(Duration::from_millis(50)); // ~20 Hz is plenty for u8 steps
-// }

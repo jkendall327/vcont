@@ -56,7 +56,14 @@ impl VolumeSetter for DefaultSetter {
 
         let duration = end - now;
 
-        let ramp = ramp::VolumeRamp::new(0, invocation.desired_sound.value(), end, duration);
+        let current_volume = get_volume().unwrap();
+
+        let ramp = ramp::VolumeRamp::new(
+            current_volume,
+            invocation.desired_sound.value(),
+            end,
+            duration,
+        );
 
         let mut last_set: Option<Percentage> = None;
 
@@ -65,9 +72,17 @@ impl VolumeSetter for DefaultSetter {
 
             let v: Percentage = ramp.value_at(now).try_into()?;
 
-            if last_set.is_none() || v != last_set.unwrap() {
+            // Avoid setting to current value unnecessarily.
+            if last_set != Some(v) {
                 self.set_volume(v);
                 last_set = Some(v);
+            }
+
+            // We are done.
+            if let Some(s) = last_set
+                && s == invocation.desired_sound
+            {
+                return Ok(());
             }
 
             tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
@@ -90,4 +105,29 @@ fn set(change: &str) -> VolumeResult {
     }
 
     Ok(())
+}
+
+fn get_volume() -> Option<u8> {
+    let output = Command::new("pactl")
+        .arg("get-sink-volume")
+        .arg("@DEFAULT_SINK@")
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Example output: "Volume: front-left: 32768 /  50% / -18.06 dB,   front-right: 32768 /  50% / -18.06 dB"
+    for part in stdout.split_whitespace() {
+        if part.ends_with('%') {
+            if let Ok(vol) = part.trim_end_matches('%').parse::<u8>() {
+                return Some(vol);
+            }
+        }
+    }
+
+    None
 }
