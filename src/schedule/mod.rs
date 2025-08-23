@@ -1,11 +1,15 @@
+use std::time::{Duration, Instant};
+
+use chrono::{DateTime, Days, Local, NaiveDateTime, NaiveTime, TimeDelta, TimeZone};
+
 pub struct Schedule {
     targets: Vec<Target>,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Target {
-    desired_sound: crate::volume::Percentage,
-    time: chrono::NaiveTime,
+    pub desired_sound: crate::volume::Percentage,
+    pub time: chrono::NaiveTime,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -22,13 +26,62 @@ impl Schedule {
     }
 
     pub fn get_next(&mut self) -> Invocation {
-        let next = self.targets[0];
-        let today = chrono::Local::now().date_naive();
-        let datetime = today.and_time(next.time);
+        let now = chrono::Local::now();
+
+        let (next_target, next_dt) = self
+            .targets
+            .iter()
+            .map(|t| {
+                let dt = next_occurrence_local(t.time, now);
+                (t, dt)
+            })
+            .min_by_key(|(_, dt)| *dt)
+            .expect("schedule has no targets");
+
+        let delta = (next_dt - now).to_std().unwrap_or(Duration::from_secs(0));
 
         Invocation {
-            time: todo!(),
-            desired_sound: next.desired_sound,
+            desired_sound: next_target.desired_sound,
+            time: Instant::now() + delta,
+        }
+    }
+}
+
+fn next_occurrence_local(time: NaiveTime, now: DateTime<Local>) -> DateTime<Local> {
+    let today = now.date_naive();
+
+    let today_ndt = NaiveDateTime::new(today, time);
+    let today_local = resolve_local(today_ndt);
+
+    if today_local > now {
+        return today_local;
+    }
+
+    let tomorrow_ndt = today_ndt
+        .checked_add_days(Days::new(1))
+        .expect("finding tomorrow created an unrepresentable date");
+
+    resolve_local(tomorrow_ndt)
+}
+
+fn resolve_local(ndt: NaiveDateTime) -> DateTime<Local> {
+    match Local.from_local_datetime(&ndt) {
+        chrono::offset::LocalResult::Single(dt) => dt,
+        chrono::offset::LocalResult::Ambiguous(a, _) => a,
+        chrono::offset::LocalResult::None => {
+            let mut probe = ndt;
+
+            loop {
+                match Local.from_local_datetime(&probe) {
+                    chrono::offset::LocalResult::Single(dt) => break dt,
+                    chrono::offset::LocalResult::Ambiguous(a, _) => break a,
+                    chrono::offset::LocalResult::None => {
+                        probe = probe
+                            .checked_add_signed(TimeDelta::minutes(1))
+                            .expect("moving probe forward created invalid time");
+                    }
+                }
+            }
         }
     }
 }
