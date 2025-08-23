@@ -19,14 +19,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         changer.change_volume(VolumeChange::Up(percentage))?;
 
-        let current: Instant = awakenings[idx];
+        let current = awakenings[idx];
 
-        tokio::time::sleep_until(current).await;
+        tokio::time::sleep_until(current.awakening).await;
 
         idx = (idx + 1) % awakenings.len();
     }
 }
 
-fn build_schedule() -> NonEmpty<Instant> {
-    nonempty![Instant::from_std(std::time::Instant::now())]
+fn build_schedule() -> NonEmpty<Invocation> {
+    let default = Invocation {
+        awakening: Instant::from_std(std::time::Instant::now()),
+        end: Instant::from_std(std::time::Instant::now()),
+    };
+
+    nonempty![default]
+}
+
+#[derive(Debug, Clone, Copy)]
+struct Invocation {
+    awakening: Instant,
+    end: Instant,
 }
