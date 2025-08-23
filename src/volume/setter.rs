@@ -13,6 +13,8 @@ pub enum VolumeError {
     Pactl { status: i32, stderr: String },
     #[error("parsing percentage failed")]
     Percentage(#[from] PercentageError),
+    #[error("Setting the volume failed")]
+    ThreadingError(#[from] tokio::task::JoinError),
 }
 
 type VolumeResult = Result<(), VolumeError>;
@@ -30,7 +32,7 @@ impl VolumeSetter for DefaultSetter {
 
         let duration = end - now;
 
-        let current_volume = get_volume().ok_or_else(|| VolumeError::Pactl {
+        let current_volume = get_volume().await.ok_or_else(|| VolumeError::Pactl {
             status: -1,
             stderr: "Failed to get current volume".to_string(),
         })?;
@@ -53,7 +55,7 @@ impl VolumeSetter for DefaultSetter {
             if last_set != Some(v) {
                 let new_volume = format!("{v}%");
 
-                set(new_volume.as_str())?;
+                set_async(new_volume.as_str()).await?;
 
                 last_set = Some(v);
             }
@@ -72,6 +74,11 @@ impl VolumeSetter for DefaultSetter {
     }
 }
 
+async fn set_async(change: &str) -> VolumeResult {
+    let change = change.to_string();
+    tokio::task::spawn_blocking(move || set(&change)).await?
+}
+
 fn set(change: &str) -> VolumeResult {
     let output = Command::new("pactl")
         .args(["set-sink-volume", "@DEFAULT_SINK@", change])
@@ -87,27 +94,31 @@ fn set(change: &str) -> VolumeResult {
     Ok(())
 }
 
-fn get_volume() -> Option<u8> {
-    let output = Command::new("pactl")
-        .arg("get-sink-volume")
-        .arg("@DEFAULT_SINK@")
-        .output()
-        .ok()?;
+async fn get_volume() -> Option<u8> {
+    tokio::task::spawn_blocking(move || {
+        let output = Command::new("pactl")
+            .arg("get-sink-volume")
+            .arg("@DEFAULT_SINK@")
+            .output()
+            .ok()?;
 
-    if !output.status.success() {
-        return None;
-    }
+        if !output.status.success() {
+            return None;
+        }
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+        let stdout = String::from_utf8_lossy(&output.stdout);
 
-    // Example output: "Volume: front-left: 32768 /  50% / -18.06 dB,   front-right: 32768 /  50% / -18.06 dB"
-    for part in stdout.split_whitespace() {
-        if part.ends_with('%') {
-            if let Ok(vol) = part.trim_end_matches('%').parse::<u8>() {
-                return Some(vol);
+        // Example output: "Volume: front-left: 32768 /  50% / -18.06 dB,   front-right: 32768 /  50% / -18.06 dB"
+        for part in stdout.split_whitespace() {
+            if part.ends_with('%') {
+                if let Ok(vol) = part.trim_end_matches('%').parse::<u8>() {
+                    return Some(vol);
+                }
             }
         }
-    }
 
-    None
+        None
+    })
+    .await
+    .ok()?
 }
