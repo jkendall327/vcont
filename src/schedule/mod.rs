@@ -20,6 +20,14 @@ pub struct Invocation {
     pub time: std::time::Instant,
 }
 
+impl Invocation {
+    pub fn get_start(&self) -> std::time::Instant {
+        self.time
+            .checked_sub(Duration::from_secs(60))
+            .expect("subtracting a minute created invalid Instant")
+    }
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum ScheduleError {
     #[error("could not be parse time portion")]

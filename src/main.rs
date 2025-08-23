@@ -17,17 +17,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let next = schedule.get_next();
 
-    tokio::time::sleep_until(next.time.into()).await;
+    tokio::time::sleep_until(next.get_start().into()).await;
+
+    let changer = volume::system_volume();
 
     loop {
         println!("Invoking...!");
 
-        let changer = volume::system_volume();
+        changer.process(next).await;
 
-        changer.change_volume(VolumeChange::Up(next.desired_sound))?;
+        //changer.change_volume(VolumeChange::Up(next.desired_sound))?;
 
         let next = schedule.get_next();
 
-        tokio::time::sleep_until(next.time.into()).await;
+        tokio::time::sleep_until(next.get_start().into()).await;
     }
 }

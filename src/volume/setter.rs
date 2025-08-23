@@ -1,6 +1,6 @@
 use std::process::{Command, Stdio};
 
-use crate::volume::percentage::Percentage;
+use crate::{schedule::Invocation, volume::percentage::Percentage};
 
 #[derive(thiserror::Error, Debug)]
 pub enum VolumeError {
@@ -18,6 +18,7 @@ pub enum VolumeChange {
 type VolumeResult = Result<(), VolumeError>;
 
 pub trait VolumeSetter {
+    fn process(&self, invocation: Invocation) -> impl Future<Output = VolumeResult>;
     fn change_volume(&self, change: VolumeChange) -> VolumeResult;
     fn set_volume(&self, new_volume: Percentage) -> VolumeResult;
 }
@@ -41,6 +42,10 @@ impl VolumeSetter for DefaultSetter {
 
         set(new_volume.as_str())?;
 
+        Ok(())
+    }
+
+    async fn process(&self, invocation: Invocation) -> VolumeResult {
         Ok(())
     }
 }
