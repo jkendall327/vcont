@@ -65,7 +65,7 @@ impl VolumeSetter for DefaultSetter {
             duration,
         );
 
-        let mut last_set: Option<Percentage> = None;
+        let mut last_set = None;
 
         loop {
             let now = std::time::Instant::now();

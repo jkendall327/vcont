@@ -7,6 +7,8 @@ pub struct Percentage(u8);
 pub enum PercentageError {
     #[error("percentage {value} is out of range ({min}..={max} allowed)")]
     OutOfRange { value: u8, min: u8, max: u8 },
+    #[error("'{invalid_str}' is not a valid number for a percentage")]
+    ParseFailed { invalid_str: String },
 }
 
 impl Percentage {
@@ -46,13 +48,14 @@ impl std::str::FromStr for Percentage {
     type Err = PercentageError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let value: u8 = s.trim().parse().map_err(|_| {
-            PercentageError::OutOfRange {
-                value: u8::MAX, // sentinel value since parsing failed
-                min: Self::MIN,
-                max: Self::MAX,
-            }
-        })?;
+        let s_trimmed = s.trim();
+
+        let value: u8 = s_trimmed
+            .parse()
+            .map_err(|_| PercentageError::ParseFailed {
+                invalid_str: s_trimmed.to_string(),
+            })?;
+
         Self::new(value)
     }
 }
