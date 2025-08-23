@@ -2,12 +2,19 @@ use crate::volume::{VolumeChange, VolumeSetter};
 
 mod volume;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let changer = volume::system_volume();
+use tokio::time::{Duration, sleep};
 
-    let percentage = 65.try_into()?;
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    loop {
+        println!("Hello, world!");
 
-    changer.change_volume(VolumeChange::Up(percentage))?;
+        let changer = volume::system_volume();
 
-    Ok(())
+        let percentage = 65.try_into()?;
+
+        changer.change_volume(VolumeChange::Up(percentage))?;
+
+        sleep(Duration::from_secs(5 * 60)).await;
+    }
 }
