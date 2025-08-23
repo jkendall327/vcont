@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused)]
 
-use crate::volume::{VolumeChange, VolumeSetter};
+use crate::volume::VolumeSetter;
 
 mod schedule;
 mod volume;

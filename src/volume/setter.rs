@@ -15,39 +15,13 @@ pub enum VolumeError {
     Percentage(#[from] PercentageError),
 }
 
-pub enum VolumeChange {
-    Up(Percentage),
-    Down(Percentage),
-}
-
 type VolumeResult = Result<(), VolumeError>;
 
 pub trait VolumeSetter {
     fn process(&self, invocation: Invocation) -> impl Future<Output = VolumeResult>;
 }
 
-pub struct DefaultSetter {}
-
-impl DefaultSetter {
-    fn change_volume(&self, change: VolumeChange) -> VolumeResult {
-        let formatted = match change {
-            VolumeChange::Up(i) => format!("+{i}%"),
-            VolumeChange::Down(i) => format!("-{i}%"),
-        };
-
-        set(formatted.as_str())?;
-
-        Ok(())
-    }
-
-    fn set_volume(&self, new_volume: Percentage) -> VolumeResult {
-        let new_volume = format!("{new_volume}%");
-
-        set(new_volume.as_str())?;
-
-        Ok(())
-    }
-}
+pub struct DefaultSetter;
 
 impl VolumeSetter for DefaultSetter {
     async fn process(&self, invocation: Invocation) -> VolumeResult {
@@ -74,7 +48,10 @@ impl VolumeSetter for DefaultSetter {
 
             // Avoid setting to current value unnecessarily.
             if last_set != Some(v) {
-                self.set_volume(v);
+                let new_volume = format!("{v}%");
+
+                set(new_volume.as_str())?;
+
                 last_set = Some(v);
             }
 
