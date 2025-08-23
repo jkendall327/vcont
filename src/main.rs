@@ -1,13 +1,11 @@
 use crate::volume::{VolumeChange, VolumeSetter};
 
+mod schedule;
 mod volume;
-
-use nonempty::{NonEmpty, nonempty};
-use tokio::time::Instant;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let awakenings = build_schedule();
+    let awakenings = schedule::build_schedule();
     let mut idx = 0;
 
     loop {
@@ -25,19 +23,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         idx = (idx + 1) % awakenings.len();
     }
-}
-
-fn build_schedule() -> NonEmpty<Invocation> {
-    let default = Invocation {
-        awakening: Instant::from_std(std::time::Instant::now()),
-        end: Instant::from_std(std::time::Instant::now()),
-    };
-
-    nonempty![default]
-}
-
-#[derive(Debug, Clone, Copy)]
-struct Invocation {
-    awakening: Instant,
-    end: Instant,
 }
