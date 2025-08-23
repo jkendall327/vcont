@@ -30,7 +30,10 @@ impl VolumeSetter for DefaultSetter {
 
         let duration = end - now;
 
-        let current_volume = get_volume().unwrap();
+        let current_volume = get_volume().ok_or_else(|| VolumeError::Pactl {
+            status: -1,
+            stderr: "Failed to get current volume".to_string(),
+        })?;
 
         let ramp = ramp::VolumeRamp::new(
             current_volume,
