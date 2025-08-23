@@ -1,26 +1,34 @@
-use nonempty::{NonEmpty, nonempty};
-use tokio::time::Instant;
+pub struct Schedule {
+    targets: Vec<Target>,
+}
 
-pub fn build_schedule() -> NonEmpty<Invocation> {
-    let default = Invocation {
-        awakening: Instant::from_std(std::time::Instant::now()),
-        end: Instant::from_std(std::time::Instant::now()),
-    };
-
-    nonempty![default]
+#[derive(Debug, Clone, Copy)]
+struct Target {
+    desired_sound: crate::volume::Percentage,
+    time: chrono::NaiveTime,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Invocation {
-    pub awakening: Instant,
-    pub end: Instant,
+    pub desired_sound: crate::volume::Percentage,
+    pub time: std::time::Instant,
 }
 
-struct Schedule {
-    targets: NonEmpty<Target>,
-}
+impl Schedule {
+    pub fn new() -> Schedule {
+        todo!()
+    }
 
-struct Target {
-    desired_sound: crate::volume::Percentage,
-    time: chrono::NaiveTime,
+    pub fn get_next(&mut self) -> Invocation {
+        self.targets.sort_by(|a, b| a.time.cmp(&b.time));
+
+        let next = self.targets[0];
+        let today = chrono::Local::now().date_naive();
+        let datetime = today.and_time(next.time);
+
+        Invocation {
+            time: todo!(),
+            desired_sound: next.desired_sound,
+        }
+    }
 }
