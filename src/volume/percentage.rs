@@ -3,25 +3,11 @@ use std::fmt::{self, Display};
 #[derive(Debug, Clone, Copy)]
 pub struct Percentage(u8);
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(thiserror::Error, Debug)]
 pub enum PercentageError {
+    #[error("percentage {value} is out of range ({min}..={max} allowed)")]
     OutOfRange { value: u8, min: u8, max: u8 },
 }
-
-impl Display for PercentageError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::OutOfRange { value, min, max } => {
-                write!(
-                    f,
-                    "percentage {value} is out of range ({min}..={max} allowed)"
-                )
-            }
-        }
-    }
-}
-
-impl std::error::Error for PercentageError {}
 
 impl Percentage {
     const MIN: u8 = 0;
