@@ -3,7 +3,7 @@ pub struct Schedule {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct Target {
+pub struct Target {
     desired_sound: crate::volume::Percentage,
     time: chrono::NaiveTime,
 }
@@ -15,13 +15,13 @@ pub struct Invocation {
 }
 
 impl Schedule {
-    pub fn new() -> Schedule {
-        todo!()
+    pub fn new(mut targets: Vec<Target>) -> Schedule {
+        // TODO: don't make consumers have to construct the Target
+        targets.sort_by_key(|t| t.time);
+        Schedule { targets }
     }
 
     pub fn get_next(&mut self) -> Invocation {
-        self.targets.sort_by(|a, b| a.time.cmp(&b.time));
-
         let next = self.targets[0];
         let today = chrono::Local::now().date_naive();
         let datetime = today.and_time(next.time);

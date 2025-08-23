@@ -5,7 +5,7 @@ mod volume;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut schedule = schedule::Schedule::new();
+    let mut schedule = schedule::Schedule::new(vec![]);
 
     let next = schedule.get_next();
 
