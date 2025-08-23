@@ -2,12 +2,25 @@ use std::fmt::{self, Display};
 use std::process::Command;
 
 pub enum VolumeChange {
-    Up(i32),
-    Down(i32),
+    Up(Percentage),
+    Down(Percentage),
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Percentage(pub i32);
+pub struct Percentage(u8);
+
+impl Percentage {
+    pub fn new(value: u8) -> Option<Self> {
+        match value {
+            v if v <= 100 => Some(Self(value)),
+            _ => None,
+        }
+    }
+
+    pub fn value(self) -> u8 {
+        self.0
+    }
+}
 
 impl Display for Percentage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
