@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused)]
+
 use crate::volume::{VolumeChange, VolumeSetter};
 
 mod schedule;
@@ -18,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .collect();
 
-    let mut schedule = schedule::Schedule::new(targets);
+    let mut schedule = schedule::Schedule::from_targets(targets)?;
 
     let next = schedule.get_next();
 

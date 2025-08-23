@@ -42,6 +42,21 @@ impl TryFrom<u8> for Percentage {
     }
 }
 
+impl std::str::FromStr for Percentage {
+    type Err = PercentageError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let value: u8 = s.trim().parse().map_err(|_| {
+            PercentageError::OutOfRange {
+                value: u8::MAX, // sentinel value since parsing failed
+                min: Self::MIN,
+                max: Self::MAX,
+            }
+        })?;
+        Self::new(value)
+    }
+}
+
 impl Display for Percentage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
