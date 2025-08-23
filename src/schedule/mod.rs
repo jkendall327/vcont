@@ -66,7 +66,7 @@ impl Schedule {
         Ok(Schedule { targets })
     }
 
-    pub fn get_next(&mut self) -> Invocation {
+    pub fn get_next(&self) -> Invocation {
         let now = chrono::Local::now();
 
         let (next_target, next_dt) = self
