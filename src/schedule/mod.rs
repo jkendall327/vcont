@@ -2,7 +2,10 @@ use std::time::{Duration, Instant};
 
 use chrono::{DateTime, Days, Local, NaiveDateTime, NaiveTime, TimeDelta, TimeZone};
 
-use crate::volume::{self, Percentage};
+use crate::{
+    config::ScheduleItem,
+    volume::{self, Percentage},
+};
 
 pub struct Schedule {
     targets: Vec<Target>,
@@ -43,12 +46,12 @@ impl Schedule {
     }
 
     /// Creates a schedule from string representations of times and desired volumes.
-    pub fn from_raw(mut targets: Vec<(String, String)>) -> Result<Schedule, ScheduleError> {
+    pub fn from_schedule_items(mut targets: Vec<ScheduleItem>) -> Result<Schedule, ScheduleError> {
         let targets: Result<Vec<_>, ScheduleError> = targets
             .into_iter()
-            .map(|(t, v)| {
-                let time = chrono::NaiveTime::parse_from_str(t.as_str(), "%H:%M")?;
-                let desired_sound: Percentage = v.as_str().parse()?;
+            .map(|(item)| {
+                let time = chrono::NaiveTime::parse_from_str(item.time.as_str(), "%H:%M")?;
+                let desired_sound: Percentage = item.time.parse()?;
 
                 Ok(Target {
                     desired_sound,

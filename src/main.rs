@@ -1,19 +1,39 @@
 #![allow(dead_code)]
 #![allow(unused)]
 
-use crate::volume::VolumeSetter;
+use std::env;
 
+use crate::{config::ScheduleItem, volume::VolumeSetter};
+
+mod config;
 mod schedule;
 mod volume;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let raw = vec![
-        ("08:00".to_owned(), "54".to_owned()),
-        ("09:00".to_owned(), "23".to_owned()),
+    let args: Vec<String> = env::args().collect();
+
+    let default_schedule = vec![
+        ScheduleItem {
+            time: "08:00".to_owned(),
+            volume: 54,
+        },
+        ScheduleItem {
+            time: "09:00".to_owned(),
+            volume: 23,
+        },
     ];
 
-    let mut schedule = schedule::Schedule::from_raw(raw)?;
+    let config_file_path = args.get(1).cloned().unwrap_or("config.toml".to_owned());
+
+    let config = config::load_config(config_file_path)
+        .await
+        .unwrap_or(config::AppConfig {
+            ramp_duration_seconds: 60,
+            schedule: default_schedule,
+        });
+
+    let mut schedule = schedule::Schedule::from_schedule_items(config.schedule)?;
 
     let mut next = schedule.get_next().ok_or("No schedule was established")?;
 
