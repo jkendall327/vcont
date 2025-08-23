@@ -2,10 +2,14 @@ use crate::volume::{VolumeChange, VolumeSetter};
 
 mod volume;
 
-use tokio::time::{Duration, Instant};
+use nonempty::{NonEmpty, nonempty};
+use tokio::time::Instant;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let awakenings = build_schedule();
+    let mut idx = 0;
+
     loop {
         println!("Invoking...!");
 
@@ -15,8 +19,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         changer.change_volume(VolumeChange::Up(percentage))?;
 
-        let wake_time = Instant::now() + Duration::from_secs(5 * 60);
+        let current: Instant = awakenings[idx];
 
-        tokio::time::sleep_until(wake_time).await;
+        tokio::time::sleep_until(current).await;
+
+        idx = (idx + 1) % awakenings.len();
     }
+}
+
+fn build_schedule() -> NonEmpty<Instant> {
+    nonempty![Instant::from_std(std::time::Instant::now())]
 }
