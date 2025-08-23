@@ -15,7 +15,7 @@ impl Display for Percentage {
     }
 }
 
-trait VolumeSetter {
+pub trait VolumeSetter {
     fn change_volume(&self, change: VolumeChange) -> Result<(), Box<dyn std::error::Error>>;
     fn set_volume(&self, new_volume: Percentage) -> Result<(), Box<dyn std::error::Error>>;
 }
@@ -51,4 +51,8 @@ impl DefaultSetter {
 
         Ok(())
     }
+}
+
+pub fn system_volume() -> impl VolumeSetter {
+    DefaultSetter {}
 }
