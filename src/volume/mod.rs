@@ -1,3 +1,4 @@
+use std::fmt::{self, Display};
 use std::process::Command;
 
 pub enum VolumeChange {
@@ -5,8 +6,14 @@ pub enum VolumeChange {
     Down(i32),
 }
 
-#[derive(Debug)]
-pub struct Percentage(i32);
+#[derive(Debug, Clone, Copy)]
+pub struct Percentage(pub i32);
+
+impl Display for Percentage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 trait VolumeSetter {
     fn change_volume(&self, change: VolumeChange) -> Result<(), Box<dyn std::error::Error>>;
@@ -28,7 +35,7 @@ impl VolumeSetter for DefaultSetter {
     }
 
     fn set_volume(&self, new_volume: Percentage) -> Result<(), Box<dyn std::error::Error>> {
-        let new_volume = format!("{new_volume:#?}%");
+        let new_volume = format!("{new_volume}%");
 
         Self::set(new_volume.as_str())?;
 
