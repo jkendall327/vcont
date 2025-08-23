@@ -5,6 +5,9 @@ use crate::{
     volume::{PercentageError, percentage::Percentage, ramp},
 };
 
+// 20 updates per second
+const RAMP_UPDATE_INTERVAL: tokio::time::Duration = tokio::time::Duration::from_millis(50);
+
 #[derive(thiserror::Error, Debug)]
 pub enum VolumeError {
     #[error("failed to spawn pactl: {0}")]
@@ -60,14 +63,16 @@ impl VolumeSetter for DefaultSetter {
                 last_set = Some(v);
             }
 
+            let now = std::time::Instant::now();
+
             // We are done.
-            if let Some(s) = last_set
-                && s == invocation.desired_sound
-            {
+            if now >= end {
+                // Set the final value one last time to be sure
+                set_async(format!("{}%", invocation.desired_sound).as_str()).await?;
                 return Ok(());
             }
 
-            tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+            tokio::time::sleep(RAMP_UPDATE_INTERVAL).await;
         }
 
         Ok(())

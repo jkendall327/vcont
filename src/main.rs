@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut schedule = schedule::Schedule::from_raw(raw)?;
 
-    let mut next = schedule.get_next();
+    let mut next = schedule.get_next().ok_or("No schedule was established")?;
 
     tokio::time::sleep_until(next.get_start().into()).await;
 
@@ -26,7 +26,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         changer.process(next).await;
 
-        next = schedule.get_next();
+        next = schedule
+            .get_next()
+            .expect("This method should always succeed if it has succeeded once before");
 
         tokio::time::sleep_until(next.get_start().into()).await;
     }

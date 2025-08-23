@@ -66,7 +66,11 @@ impl Schedule {
         Ok(Schedule { targets })
     }
 
-    pub fn get_next(&self) -> Invocation {
+    pub fn get_next(&self) -> Option<Invocation> {
+        if self.targets.is_empty() {
+            return None;
+        }
+
         let now = chrono::Local::now();
 
         let (next_target, next_dt) = self
@@ -76,15 +80,14 @@ impl Schedule {
                 let dt = next_occurrence_local(t.time, now);
                 (t, dt)
             })
-            .min_by_key(|(_, dt)| *dt)
-            .expect("schedule has no targets");
+            .min_by_key(|(_, dt)| *dt)?;
 
         let delta = (next_dt - now).to_std().unwrap_or(Duration::from_secs(0));
 
-        Invocation {
+        Some(Invocation {
             desired_sound: next_target.desired_sound,
             time: Instant::now() + delta,
-        }
+        })
     }
 }
 
