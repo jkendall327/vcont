@@ -124,6 +124,6 @@ async fn get_volume() -> Result<u8, VolumeError> {
 
     Err(VolumeError::Pactl {
         status: -1,
-        stderr: "Failed to parse volume".to_string(),
+        stderr: format!("Failed to parse volume from pactl output: '{stdout}'"),
     })
 }
