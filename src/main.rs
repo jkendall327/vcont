@@ -3,7 +3,7 @@
 
 use std::env;
 
-use crate::{config::ScheduleItem, volume::VolumeSetter};
+use crate::{config::ScheduleItem, schedule::Invocation, volume::VolumeSetter};
 
 mod config;
 mod schedule;
@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut next = schedule.get_next().ok_or("No schedule was established")?;
 
-    tokio::time::sleep_until(next.get_start().into()).await;
+    wait_for_next(&next).await;
 
     let changer = volume::system_volume();
 
@@ -50,6 +50,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .get_next()
             .expect("This method should always succeed if it has succeeded once before");
 
-        tokio::time::sleep_until(next.get_start().into()).await;
+        wait_for_next(&next).await;
     }
+}
+
+async fn wait_for_next(invocation: &Invocation) {
+    tokio::time::sleep_until(invocation.get_start().into()).await;
 }
