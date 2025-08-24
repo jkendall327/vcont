@@ -52,7 +52,7 @@ impl Schedule {
 
     /// Creates a schedule from string representations of times and desired volumes.
     pub fn from_schedule_items(
-        mut targets: Vec<ScheduleItem>,
+        targets: Vec<ScheduleItem>,
         ramp_duration_seconds: u64,
     ) -> Result<Schedule, ScheduleError> {
         let targets: Result<Vec<_>, ScheduleError> = targets

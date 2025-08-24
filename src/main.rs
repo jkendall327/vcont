@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused)]
 #![warn(clippy::pedantic)]
 
 use std::env;
@@ -25,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("starting up");
 
-    let mut schedule = get_schedule().await?;
+    let schedule = get_schedule().await?;
 
     info!("built schedule");
 

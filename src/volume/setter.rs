@@ -34,8 +34,6 @@ pub struct DefaultSetter;
 
 impl VolumeSetter for DefaultSetter {
     async fn process(&self, invocation: Invocation) -> VolumeResult {
-        let now = std::time::Instant::now();
-
         let current_volume = get_volume().await?;
 
         let ramp = ramp::VolumeRamp::new(
@@ -70,8 +68,6 @@ impl VolumeSetter for DefaultSetter {
 
             tokio::time::sleep(RAMP_UPDATE_INTERVAL).await;
         }
-
-        Ok(())
     }
 }
 
