@@ -30,18 +30,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut next = schedule.get_next().ok_or("No schedule was established")?;
 
-    wait_for_next(&next).await;
-
     let changer = volume::system_volume();
 
     let worker = async {
         loop {
+            wait_for_next(&next).await;
             debug!("wait over, beginning work");
 
             changer.process(next).await;
 
             if let Some(new_next) = schedule.get_next() {
-                wait_for_next(&new_next).await;
+                next = new_next;
             } else {
                 error!("Schedule is now empty, cannot find next invocation. Shutting down.");
                 break;
