@@ -36,7 +36,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             wait_for_next(&next).await;
             debug!("wait over, beginning work");
 
-            changer.process(next).await;
+            if let Err(e) = changer.process(next).await {
+                error!("Error processing volume change: {e}");
+                break;
+            }
 
             if let Some(new_next) = schedule.get_next() {
                 next = new_next;
