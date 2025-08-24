@@ -63,8 +63,6 @@ impl VolumeSetter for DefaultSetter {
                 last_set = Some(v);
             }
 
-            let now = std::time::Instant::now();
-
             // We are done.
             if now >= end {
                 // Set the final value one last time to be sure
