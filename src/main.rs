@@ -4,7 +4,7 @@
 use std::env;
 
 use tokio::signal;
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::{
     config::ScheduleItem,
@@ -78,12 +78,19 @@ async fn get_schedule() -> Result<Schedule, ScheduleError> {
 
     let config_file_path = args.get(1).cloned().unwrap_or("config.toml".to_owned());
 
-    let config = config::load_config(config_file_path)
-        .await
-        .unwrap_or(config::AppConfig {
-            ramp_duration_seconds: 60,
-            schedule: default_schedule,
-        });
+    let config = match config::load_config(&config_file_path).await {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            warn!(
+                "Failed to load config from '{}': {}. Using default schedule.",
+                config_file_path, e
+            );
+            config::AppConfig {
+                ramp_duration_seconds: 60,
+                schedule: default_schedule,
+            }
+        }
+    };
 
     schedule::Schedule::from_schedule_items(config.schedule, config.ramp_duration_seconds)
 }
