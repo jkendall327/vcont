@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused)]
+#![warn(clippy::pedantic)]
 
 use std::env;
 
@@ -49,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     tokio::select! {
-        _ = worker => {}
+        () = worker => {}
         _ = signal::ctrl_c() => {
             info!("shutdown signal received");
         }
@@ -99,19 +100,16 @@ async fn get_schedule() -> Result<Schedule, ScheduleError> {
 }
 
 fn check_dependencies() -> Result<(), Box<dyn std::error::Error>> {
-    match which::which("pactl") {
-        Ok(path) => {
-            debug!("Found 'pactl' executable at: {}", path.display());
-            Ok(())
-        }
-        Err(_) => {
-            let error_message = "Dependency 'pactl' not found. \
-            Please ensure PulseAudio (or a compatible provider like PipeWire) is installed \
-            and that the 'pactl' command is available in your system's PATH.";
+    if let Ok(path) = which::which("pactl") {
+        debug!("Found 'pactl' executable at: {}", path.display());
+        Ok(())
+    } else {
+        let error_message = "Dependency 'pactl' not found. \
+        Please ensure PulseAudio (or a compatible provider like PipeWire) is installed \
+        and that the 'pactl' command is available in your system's PATH.";
 
-            eprintln!("Error: {error_message}");
+        eprintln!("Error: {error_message}");
 
-            Err(error_message.into()) // Convert the string slice into a boxed error
-        }
+        Err(error_message.into()) // Convert the string slice into a boxed error
     }
 }

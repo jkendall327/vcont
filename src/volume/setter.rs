@@ -1,4 +1,6 @@
+use regex::Regex;
 use std::process::{Command, Stdio};
+use std::sync::OnceLock;
 
 use crate::{
     schedule::Invocation,
@@ -7,6 +9,8 @@ use crate::{
 
 // 20 updates per second
 const RAMP_UPDATE_INTERVAL: tokio::time::Duration = tokio::time::Duration::from_millis(50);
+
+static RE: OnceLock<Regex> = OnceLock::new();
 
 #[derive(thiserror::Error, Debug)]
 pub enum VolumeError {
@@ -107,10 +111,6 @@ async fn get_volume() -> Result<u8, VolumeError> {
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-
-    use regex::Regex;
-    use std::sync::OnceLock;
-    static RE: OnceLock<Regex> = OnceLock::new();
 
     let re = RE.get_or_init(|| Regex::new(r"(\d{1,3})%").unwrap());
 
