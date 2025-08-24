@@ -1,5 +1,8 @@
 use chrono::{DateTime, Days, Local, NaiveDateTime, NaiveTime, TimeDelta, TimeZone};
 
+/// Given a timezone-less time (i.e. hours and minutes),
+/// and the current time in the local timezone,
+/// find the next occurence of the timezone-less time.
 pub fn next_occurrence_local(time: NaiveTime, now: DateTime<Local>) -> DateTime<Local> {
     let today = now.date_naive();
 
