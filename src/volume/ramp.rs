@@ -24,11 +24,15 @@ impl VolumeRamp {
         VolumeRamp {
             from: current_volume_now,
             to: target,
-            start: target_time - duration,
+            start: target_time
+                .checked_sub(duration)
+                .expect("This failing is pathological"),
             end: target_time,
         }
     }
 
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
     pub fn value_at(&self, now: Instant) -> u8 {
         if now <= self.start {
             return self.from;
@@ -36,10 +40,12 @@ impl VolumeRamp {
         if now >= self.end {
             return self.to;
         }
+
         let total = (self.end - self.start).as_secs_f32();
         let t = (now - self.start).as_secs_f32() / total; // 0..1
         let t = smootherstep01(t); // eased 0..1
-        let v = (self.from as f32) + (self.to as f32 - self.from as f32) * t;
+        let v = f32::from(self.from) + (f32::from(self.to) - f32::from(self.from)) * t;
+
         v.round().clamp(0.0, 100.0) as u8
     }
 }
