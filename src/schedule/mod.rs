@@ -54,15 +54,15 @@ impl Schedule {
         targets: &[ScheduleItem],
         ramp_duration_seconds: u64,
     ) -> Result<Schedule, ScheduleError> {
-        let targets: Result<Vec<_>, ScheduleError> =
-            targets.iter().map(Self::from_schedule_item).collect();
+        let mut mapped = targets
+            .iter()
+            .map(Self::from_schedule_item)
+            .collect::<Result<Vec<_>, _>>()?;
 
-        let mut targets = targets?;
-
-        targets.sort_by_key(|t| t.time);
+        mapped.sort_unstable_by_key(|t| t.time);
 
         Ok(Schedule {
-            targets,
+            targets: mapped,
             ramp_duration: Duration::from_secs(ramp_duration_seconds),
         })
     }
