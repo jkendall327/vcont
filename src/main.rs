@@ -4,7 +4,7 @@
 use std::env;
 
 use tokio::signal;
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::{
     config::ScheduleItem,
@@ -40,11 +40,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             changer.process(next).await;
 
-            next = schedule
-                .get_next()
-                .expect("This method should always succeed if it has succeeded once before");
-
-            wait_for_next(&next).await;
+            if let Some(new_next) = schedule.get_next() {
+                wait_for_next(&new_next).await;
+            } else {
+                error!("Schedule is now empty, cannot find next invocation. Shutting down.");
+                break;
+            }
         }
     };
 
