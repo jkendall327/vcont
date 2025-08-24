@@ -51,7 +51,7 @@ impl Schedule {
             .into_iter()
             .map(|(item)| {
                 let time = chrono::NaiveTime::parse_from_str(item.time.as_str(), "%H:%M")?;
-                let desired_sound: Percentage = item.time.parse()?;
+                let desired_sound: Percentage = item.volume.try_into()?;
 
                 Ok(Target {
                     desired_sound,
