@@ -4,7 +4,7 @@
 use std::env;
 
 use tokio::signal;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 use crate::{
     config::ScheduleItem,
@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let worker = async {
         loop {
-            println!("Invoking...!");
+            debug!("wait over, beginning work");
 
             changer.process(next).await;
 

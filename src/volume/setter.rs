@@ -31,9 +31,6 @@ pub struct DefaultSetter;
 impl VolumeSetter for DefaultSetter {
     async fn process(&self, invocation: Invocation) -> VolumeResult {
         let now = std::time::Instant::now();
-        let end = invocation.time;
-
-        let duration = end - now;
 
         let current_volume = get_volume().await.ok_or_else(|| VolumeError::Pactl {
             status: -1,
@@ -43,8 +40,8 @@ impl VolumeSetter for DefaultSetter {
         let ramp = ramp::VolumeRamp::new(
             current_volume,
             invocation.desired_sound.value(),
-            end,
-            duration,
+            invocation.time,
+            invocation.ramp_duration,
         );
 
         let mut last_set = None;
@@ -64,7 +61,7 @@ impl VolumeSetter for DefaultSetter {
             }
 
             // We are done.
-            if now >= end {
+            if now >= invocation.time {
                 // Set the final value one last time to be sure
                 set_async(format!("{}%", invocation.desired_sound).as_str()).await?;
                 return Ok(());

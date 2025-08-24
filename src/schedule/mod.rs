@@ -57,7 +57,7 @@ impl Schedule {
     ) -> Result<Schedule, ScheduleError> {
         let targets: Result<Vec<_>, ScheduleError> = targets
             .into_iter()
-            .map(|(item)| {
+            .map(|item| {
                 let time = chrono::NaiveTime::parse_from_str(item.time.as_str(), "%H:%M")?;
                 let desired_sound: Percentage = item.volume.try_into()?;
 
