@@ -23,7 +23,7 @@ pub enum VolumeError {
 type VolumeResult = Result<(), VolumeError>;
 
 pub trait VolumeSetter {
-    fn process(&self, invocation: Invocation) -> impl Future<Output = VolumeResult>;
+    async fn process(&self, invocation: Invocation) -> VolumeResult;
 }
 
 pub struct DefaultSetter;
