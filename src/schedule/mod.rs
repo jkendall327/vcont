@@ -9,6 +9,7 @@ use crate::{
 
 pub struct Schedule {
     targets: Vec<Target>,
+    ramp_duration: Duration,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -21,12 +22,13 @@ pub struct Target {
 pub struct Invocation {
     pub desired_sound: crate::volume::Percentage,
     pub time: std::time::Instant,
+    pub ramp_duration: Duration,
 }
 
 impl Invocation {
     pub fn get_start(&self) -> std::time::Instant {
         self.time
-            .checked_sub(Duration::from_secs(60))
+            .checked_sub(self.ramp_duration)
             .expect("subtracting a minute created invalid Instant")
     }
 }
@@ -42,11 +44,17 @@ pub enum ScheduleError {
 impl Schedule {
     /// Creates an empty schedule.
     pub fn new() -> Schedule {
-        Schedule { targets: vec![] }
+        Schedule {
+            targets: vec![],
+            ramp_duration: Duration::from_secs(60),
+        }
     }
 
     /// Creates a schedule from string representations of times and desired volumes.
-    pub fn from_schedule_items(mut targets: Vec<ScheduleItem>) -> Result<Schedule, ScheduleError> {
+    pub fn from_schedule_items(
+        mut targets: Vec<ScheduleItem>,
+        ramp_duration_seconds: u64,
+    ) -> Result<Schedule, ScheduleError> {
         let targets: Result<Vec<_>, ScheduleError> = targets
             .into_iter()
             .map(|(item)| {
@@ -60,13 +68,19 @@ impl Schedule {
             })
             .collect();
 
-        Self::from_targets(targets?)
+        Self::from_targets(targets?, ramp_duration_seconds)
     }
 
     /// Creates a schedule from pre-constructed targets.
-    pub fn from_targets(mut targets: Vec<Target>) -> Result<Schedule, ScheduleError> {
+    pub fn from_targets(
+        mut targets: Vec<Target>,
+        ramp_duration_seconds: u64,
+    ) -> Result<Schedule, ScheduleError> {
         targets.sort_by_key(|t| t.time);
-        Ok(Schedule { targets })
+        Ok(Schedule {
+            targets,
+            ramp_duration: Duration::from_secs(ramp_duration_seconds),
+        })
     }
 
     pub fn get_next(&self) -> Option<Invocation> {
@@ -90,6 +104,7 @@ impl Schedule {
         Some(Invocation {
             desired_sound: next_target.desired_sound,
             time: Instant::now() + delta,
+            ramp_duration: self.ramp_duration,
         })
     }
 }

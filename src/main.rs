@@ -85,5 +85,5 @@ async fn get_schedule() -> Result<Schedule, ScheduleError> {
             schedule: default_schedule,
         });
 
-    schedule::Schedule::from_schedule_items(config.schedule)
+    schedule::Schedule::from_schedule_items(config.schedule, config.ramp_duration_seconds)
 }
