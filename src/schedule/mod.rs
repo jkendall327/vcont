@@ -68,15 +68,10 @@ impl Schedule {
             })
             .collect();
 
-        Self::from_targets(targets?, ramp_duration_seconds)
-    }
+        let mut targets = targets?;
 
-    /// Creates a schedule from pre-constructed targets.
-    pub fn from_targets(
-        mut targets: Vec<Target>,
-        ramp_duration_seconds: u64,
-    ) -> Result<Schedule, ScheduleError> {
         targets.sort_by_key(|t| t.time);
+
         Ok(Schedule {
             targets,
             ramp_duration: Duration::from_secs(ramp_duration_seconds),
