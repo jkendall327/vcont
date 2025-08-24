@@ -108,12 +108,17 @@ async fn get_volume() -> Result<u8, VolumeError> {
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
+    use regex::Regex;
+    use std::sync::OnceLock;
+    static RE: OnceLock<Regex> = OnceLock::new();
+
+    let re = RE.get_or_init(|| Regex::new(r"(\d{1,3})%").unwrap());
+
     // Example output: "Volume: front-left: 32768 /  50% / -18.06 dB,   front-right: 32768 /  50% / -18.06 dB"
-    for part in stdout.split_whitespace() {
-        if part.ends_with('%') {
-            if let Ok(vol) = part.trim_end_matches('%').parse::<u8>() {
-                return Ok(vol);
-            }
+    if let Some(captures) = re.captures(&stdout) {
+        // captures[1] will be the string of digits
+        if let Ok(vol) = captures[1].parse::<u8>() {
+            return Ok(vol);
         }
     }
 
