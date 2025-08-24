@@ -32,10 +32,7 @@ impl VolumeSetter for DefaultSetter {
     async fn process(&self, invocation: Invocation) -> VolumeResult {
         let now = std::time::Instant::now();
 
-        let current_volume = get_volume().await.ok_or_else(|| VolumeError::Pactl {
-            status: -1,
-            stderr: "Failed to get current volume".to_string(),
-        })?;
+        let current_volume = get_volume().await?;
 
         let ramp = ramp::VolumeRamp::new(
             current_volume,
@@ -94,31 +91,34 @@ fn set(change: &str) -> VolumeResult {
     Ok(())
 }
 
-async fn get_volume() -> Option<u8> {
-    tokio::task::spawn_blocking(move || {
-        let output = Command::new("pactl")
+async fn get_volume() -> Result<u8, VolumeError> {
+    let output = tokio::task::spawn_blocking(|| {
+        Command::new("pactl")
             .arg("get-sink-volume")
             .arg("@DEFAULT_SINK@")
             .output()
-            .ok()?;
+    })
+    .await??; // The first '?' handles JoinError, the second handles io::Error
 
-        if !output.status.success() {
-            return None;
-        }
+    if !output.status.success() {
+        let status = output.status.code().unwrap_or(-1);
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        return Err(VolumeError::Pactl { status, stderr });
+    }
 
-        let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = String::from_utf8_lossy(&output.stdout);
 
-        // Example output: "Volume: front-left: 32768 /  50% / -18.06 dB,   front-right: 32768 /  50% / -18.06 dB"
-        for part in stdout.split_whitespace() {
-            if part.ends_with('%') {
-                if let Ok(vol) = part.trim_end_matches('%').parse::<u8>() {
-                    return Some(vol);
-                }
+    // Example output: "Volume: front-left: 32768 /  50% / -18.06 dB,   front-right: 32768 /  50% / -18.06 dB"
+    for part in stdout.split_whitespace() {
+        if part.ends_with('%') {
+            if let Ok(vol) = part.trim_end_matches('%').parse::<u8>() {
+                return Ok(vol);
             }
         }
+    }
 
-        None
+    Err(VolumeError::Pactl {
+        status: -1,
+        stderr: "Failed to parse volume".to_string(),
     })
-    .await
-    .ok()?
 }
