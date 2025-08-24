@@ -42,7 +42,6 @@ pub enum ScheduleError {
 }
 
 impl Schedule {
-    /// Creates an empty schedule.
     pub fn new() -> Schedule {
         Schedule {
             targets: vec![],
@@ -52,21 +51,11 @@ impl Schedule {
 
     /// Creates a schedule from string representations of times and desired volumes.
     pub fn from_schedule_items(
-        targets: Vec<ScheduleItem>,
+        targets: &[ScheduleItem],
         ramp_duration_seconds: u64,
     ) -> Result<Schedule, ScheduleError> {
-        let targets: Result<Vec<_>, ScheduleError> = targets
-            .into_iter()
-            .map(|item| {
-                let time = chrono::NaiveTime::parse_from_str(item.time.as_str(), "%H:%M")?;
-                let desired_sound: Percentage = item.volume.try_into()?;
-
-                Ok(Target {
-                    desired_sound,
-                    time,
-                })
-            })
-            .collect();
+        let targets: Result<Vec<_>, ScheduleError> =
+            targets.iter().map(Self::from_schedule_item).collect();
 
         let mut targets = targets?;
 
@@ -75,6 +64,16 @@ impl Schedule {
         Ok(Schedule {
             targets,
             ramp_duration: Duration::from_secs(ramp_duration_seconds),
+        })
+    }
+
+    fn from_schedule_item(item: &ScheduleItem) -> Result<Target, ScheduleError> {
+        let time = chrono::NaiveTime::parse_from_str(item.time.as_str(), "%H:%M")?;
+        let desired_sound: Percentage = item.volume.try_into()?;
+
+        Ok(Target {
+            desired_sound,
+            time,
         })
     }
 
@@ -131,7 +130,7 @@ mod tests {
         ];
 
         // Act
-        let schedule = Schedule::from_schedule_items(items, 60).unwrap();
+        let schedule = Schedule::from_schedule_items(&items, 60).unwrap();
 
         // Assert
         assert_eq!(
@@ -157,7 +156,7 @@ mod tests {
         }];
 
         // Act
-        let result = Schedule::from_schedule_items(items, 60);
+        let result = Schedule::from_schedule_items(&items, 60);
 
         // Assert
         assert!(matches!(result, Err(ScheduleError::UnparsedTime(_))));
@@ -172,7 +171,7 @@ mod tests {
         }];
 
         // Act
-        let result = Schedule::from_schedule_items(items, 60);
+        let result = Schedule::from_schedule_items(&items, 60);
 
         // Assert
         assert!(matches!(result, Err(ScheduleError::UnparsedVolume(_))));

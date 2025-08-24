@@ -97,7 +97,7 @@ async fn get_schedule() -> Result<Schedule, ScheduleError> {
         }
     };
 
-    schedule::Schedule::from_schedule_items(config.schedule, config.ramp_duration_seconds)
+    schedule::Schedule::from_schedule_items(&config.schedule, config.ramp_duration_seconds)
 }
 
 fn check_dependencies() -> Result<(), Box<dyn std::error::Error>> {
